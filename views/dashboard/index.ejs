@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %> — SpendWise</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<%- include('../partials/navbar') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <main class="main-content">
+    <%- include('../partials/flash') %>
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Overview for <%= month %> <%= year %>, <%= user ? user.name : '' %></p>
+      </div>
+      <a href="/expenses/new" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Add Expense
+      </a>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card--spent">
+          <div class="stat-icon"><i class="bi bi-currency-rupee"></i></div>
+          <div class="stat-label">Spent this month</div>
+          <div class="stat-value">₹<%= totalSpent.toLocaleString('en-IN', {maximumFractionDigits:0}) %></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card--budget">
+          <div class="stat-icon"><i class="bi bi-bullseye"></i></div>
+          <div class="stat-label">Total budget</div>
+          <div class="stat-value">₹<%= totalBudget.toLocaleString('en-IN', {maximumFractionDigits:0}) %></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card--remaining">
+          <div class="stat-icon"><i class="bi bi-piggy-bank"></i></div>
+          <div class="stat-label">Remaining</div>
+          <div class="stat-value">₹<%= remaining.toLocaleString('en-IN', {maximumFractionDigits:0}) %></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card--count">
+          <div class="stat-icon"><i class="bi bi-list-check"></i></div>
+          <div class="stat-label">Transactions</div>
+          <div class="stat-value"><%= expenseCount %></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-lg-8">
+        <div class="card-panel">
+          <h6 class="panel-title">6-Month Spending Trend</h6>
+          <canvas id="trendChart" height="120"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card-panel">
+          <h6 class="panel-title">By Category</h6>
+          <canvas id="catChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Alerts + Recent -->
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card-panel">
+          <h6 class="panel-title">Budget Status</h6>
+          <% if (budgetAlerts.length === 0) { %>
+            <p class="text-muted small mt-2">No budgets set for this month. <a href="/budgets">Set budgets →</a></p>
+          <% } %>
+          <% budgetAlerts.forEach(b => { %>
+            <div class="budget-bar-item">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="small fw-500"><%= b.category %></span>
+                <span class="small <%= b.over ? 'text-danger' : 'text-muted' %>">
+                  ₹<%= b.spent.toFixed(0) %> / ₹<%= b.limit.toFixed(0) %>
+                </span>
+              </div>
+              <div class="progress" style="height:6px">
+                <div class="progress-bar <%= b.over ? 'bg-danger' : 'bg-primary' %>"
+                  style="width:<%= Math.min(Math.round(b.spent/b.limit*100),100) %>%"></div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card-panel">
+          <h6 class="panel-title">Recent Expenses</h6>
+          <% if (recentExpenses.length === 0) { %>
+            <p class="text-muted small mt-2">No expenses yet. <a href="/expenses/new">Add one →</a></p>
+          <% } %>
+          <% recentExpenses.forEach(e => { %>
+            <div class="recent-item">
+              <div>
+                <div class="small fw-500"><%= e.description || e.category %></div>
+                <div class="tiny text-muted"><%= e.category %> · <%= new Date(e.date).toLocaleDateString('en-IN') %></div>
+              </div>
+              <div class="amount-pill">₹<%= e.amount.toLocaleString('en-IN') %></div>
+            </div>
+          <% }) %>
+          <% if (recentExpenses.length > 0) { %>
+            <a href="/expenses" class="btn btn-sm btn-outline-secondary mt-2 w-100">View all</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+new Chart(trendCtx, {
+  type: 'bar',
+  data: {
+    labels: <%- JSON.stringify(chartData.trend.labels) %>,
+    datasets: [{
+      label: 'Spent (₹)',
+      data: <%- JSON.stringify(chartData.trend.data) %>,
+      backgroundColor: 'rgba(99, 102, 241, 0.7)',
+      borderColor: 'rgba(99, 102, 241, 1)',
+      borderWidth: 1.5,
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+const catCtx = document.getElementById('catChart').getContext('2d');
+new Chart(catCtx, {
+  type: 'doughnut',
+  data: {
+    labels: <%- JSON.stringify(chartData.categories.labels) %>,
+    datasets: [{
+      data: <%- JSON.stringify(chartData.categories.data) %>,
+      backgroundColor: ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#f97316','#64748b'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '65%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+  }
+});
+</script>
+</body>
+</html>

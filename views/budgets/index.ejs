@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %> — SpendWise</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<%- include('../partials/navbar') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <main class="main-content">
+    <%- include('../partials/flash') %>
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Budget Manager</h1>
+        <p class="page-subtitle"><%= months[month] %> <%= year %> — set monthly limits per category</p>
+      </div>
+    </div>
+
+    <!-- Month Selector -->
+    <div class="card-panel mb-3">
+      <form method="GET" action="/budgets" class="row g-2 align-items-end">
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label small">Month</label>
+          <select name="month" class="form-select form-select-sm">
+            <% months.forEach((m, i) => { %>
+              <option value="<%= i %>" <%= month === i ? 'selected' : '' %>><%= m %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-sm-4 col-md-2">
+          <label class="form-label small">Year</label>
+          <input type="number" name="year" class="form-control form-control-sm"
+            value="<%= year %>" min="2020" max="<%= new Date().getFullYear() + 5 %>"/>
+        </div>
+        <div class="col-sm-4 col-md-2">
+          <button type="submit" class="btn btn-sm btn-primary w-100">Go</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Budget Cards Grid -->
+    <div class="row g-3">
+      <% budgetData.forEach(b => { %>
+        <div class="col-sm-6 col-lg-4">
+          <div class="card-panel budget-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="mb-0 fw-600"><%= b.category %></h6>
+              <% if (b.over) { %>
+                <span class="badge bg-danger">Over budget</span>
+              <% } else if (b.limit && b.percentage > 75) { %>
+                <span class="badge bg-warning text-dark">High usage</span>
+              <% } %>
+            </div>
+
+            <% if (b.limit) { %>
+              <div class="progress mb-2" style="height:8px">
+                <div class="progress-bar <%= b.over ? 'bg-danger' : b.percentage > 75 ? 'bg-warning' : 'bg-success' %>"
+                  style="width:<%= b.percentage %>%"></div>
+              </div>
+              <div class="d-flex justify-content-between small text-muted mb-3">
+                <span>Spent: ₹<%= b.spent.toFixed(0) %></span>
+                <span><%= b.percentage %>%</span>
+                <span>Limit: ₹<%= b.limit.toFixed(0) %></span>
+              </div>
+            <% } else { %>
+              <p class="small text-muted mb-3">No budget set · ₹<%= b.spent.toFixed(0) %> spent</p>
+            <% } %>
+
+            <!-- Set / update limit form -->
+            <form action="/budgets" method="POST" class="d-flex gap-2">
+              <input type="hidden" name="category" value="<%= b.category %>"/>
+              <input type="hidden" name="month" value="<%= month %>"/>
+              <input type="hidden" name="year" value="<%= year %>"/>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">₹</span>
+                <input type="number" name="limit" class="form-control" placeholder="Set limit"
+                  value="<%= b.limit || '' %>" min="1" step="1" required/>
+              </div>
+              <button type="submit" class="btn btn-sm btn-primary px-3">
+                <%= b.limit ? 'Update' : 'Set' %>
+              </button>
+            </form>
+
+            <% if (b.budgetId) { %>
+              <form action="/budgets/<%= b.budgetId %>?_method=DELETE&month=<%= month %>&year=<%= year %>"
+                method="POST" class="mt-2"
+                onsubmit="return confirm('Remove this budget limit?')">
+                <button class="btn btn-xs btn-outline-danger w-100">
+                  <i class="bi bi-trash me-1"></i>Remove limit
+                </button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

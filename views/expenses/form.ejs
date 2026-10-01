@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %> — SpendWise</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<%- include('../partials/navbar') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <main class="main-content">
+    <%- include('../partials/flash') %>
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><%= expense ? 'Edit Expense' : 'Add Expense' %></h1>
+        <p class="page-subtitle"><%= expense ? 'Update the details below' : 'Record a new transaction' %></p>
+      </div>
+      <a href="/expenses" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="card-panel">
+          <form action="<%= expense ? '/expenses/' + expense._id + '?_method=PUT' : '/expenses' %>" method="POST">
+
+            <div class="mb-3">
+              <label class="form-label">Amount (₹) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" name="amount" step="0.01" min="0.01" class="form-control"
+                  placeholder="0.00" value="<%= expense ? expense.amount : '' %>" required/>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Category <span class="text-danger">*</span></label>
+              <select name="category" class="form-select" required>
+                <option value="">Select a category</option>
+                <% categories.forEach(cat => { %>
+                  <option value="<%= cat %>" <%= expense && expense.category === cat ? 'selected' : '' %>><%= cat %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Date <span class="text-danger">*</span></label>
+              <input type="date" name="date" class="form-control"
+                value="<%= expense ? new Date(expense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] %>"
+                required/>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <input type="text" name="description" class="form-control"
+                placeholder="e.g. Grocery run, Uber ride"
+                value="<%= expense ? expense.description || '' : '' %>"/>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label">Payment Method</label>
+              <select name="paymentMethod" class="form-select">
+                <% ['Cash','Card','UPI','Net Banking','Other'].forEach(pm => { %>
+                  <option value="<%= pm %>" <%= expense && expense.paymentMethod === pm ? 'selected' : '' %>><%= pm %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-lg me-1"></i><%= expense ? 'Update Expense' : 'Add Expense' %>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

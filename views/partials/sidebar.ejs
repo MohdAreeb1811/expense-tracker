@@ -1,0 +1,16 @@
+<aside class="sidebar">
+  <nav class="sidebar-nav">
+    <a href="/dashboard" class="sidebar-link <%= title === 'Dashboard' ? 'active' : '' %>">
+      <i class="bi bi-grid-1x2"></i><span>Dashboard</span>
+    </a>
+    <a href="/expenses" class="sidebar-link <%= title === 'My Expenses' ? 'active' : '' %>">
+      <i class="bi bi-receipt"></i><span>Expenses</span>
+    </a>
+    <a href="/expenses/new" class="sidebar-link <%= title === 'Add Expense' ? 'active' : '' %>">
+      <i class="bi bi-plus-circle"></i><span>Add Expense</span>
+    </a>
+    <a href="/budgets" class="sidebar-link <%= title === 'Budget Manager' ? 'active' : '' %>">
+      <i class="bi bi-pie-chart"></i><span>Budgets</span>
+    </a>
+  </nav>
+</aside>
